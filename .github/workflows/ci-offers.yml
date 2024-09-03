@@ -1,0 +1,67 @@
+name: Merge offer-service branch to main
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'offer_management/**'
+
+  pull_request:
+    branches: [ "main", "**/offer**" ]
+    paths:
+      - 'offer_management/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: offer_management_user
+          POSTGRES_PASSWORD: offer_management_pass
+          POSTGRES_DB: offer_management_db
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd="pg_isready -U offer_management_user"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
+
+      - name: Install dependencies
+        run: go mod download
+        working-directory: ./offer_management
+
+      - name: Wait for Postgres
+        run: until pg_isready -h localhost -U offer_management_user -p 5433; do sleep 1; done
+        working-directory: ./offer_management
+
+      - name: Run tests and check coverage
+        env:
+          DATABASE_URL: postgres://offer_management_user:offer_management_pass@localhost:5432/offer_management_db?sslmode=disable
+        run: |
+          go test ./routes -coverprofile=coverage.out > test_output.log 2>&1
+          test_result=$?
+          if [ $test_result -ne 0 ]; then
+            echo "Some tests failed. Check the test output:"
+            cat test_output.log
+            exit 1
+          fi
+          coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Total coverage is $coverage%"
+          if (( $(echo "$coverage < 70" | bc -l) )); then
+            echo "Test coverage is below 70%! The minimum required is 70%."
+            exit 1
+          fi
+          echo "All tests passed and coverage is above 70%."
+        working-directory: ./offer_management

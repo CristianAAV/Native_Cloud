@@ -1,0 +1,137 @@
+version: '3.8'
+
+services:
+  users:
+    build:
+      context: ./user_management
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      DB_NAME: monitor_users
+      DB_HOST: users_db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    depends_on:
+      - users_db
+    networks:
+      - user_net
+      - app_net
+  users_db:
+    image: postgres
+    environment:
+      POSTGRES_HOST: localhost
+      POSTGRES_DB: monitor_users
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    networks:
+      - user_net
+  routes:
+    build:
+      context: ./route_management
+      dockerfile: Dockerfile
+    ports:
+      - 3002:3002
+    environment:
+      DB_USER: routes_management_user
+      DB_PASSWORD: routes_management_pass
+      DB_NAME: routes_management_db
+      DB_HOST: routes_db
+      DB_PORT: 5432
+      CONFIG_PORT: 3000
+      USERS_PATH: "http://users:3000"
+    depends_on:
+      - routes_db
+    networks:
+      - route_net
+      - app_net
+  routes_db:
+    image: postgres
+    environment:
+      POSTGRES_DB: routes_management_db
+      POSTGRES_USER: routes_management_user
+      POSTGRES_PASSWORD: routes_management_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U routes_management_user -d routes_management_db"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+    networks:
+      - route_net
+  posts:
+    build:
+      context: ./post_management
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      DB_NAME: monitor_posts
+      DB_HOST: posts_db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      CONFIG_PORT: 3001
+      USERS_PATH: "http://users:3000"
+    depends_on:
+      posts_db:
+        condition: service_healthy
+    networks:
+      - post_net
+      - app_net
+  posts_db:
+    image: postgres
+    environment:
+      POSTGRES_DB: monitor_posts
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+    networks:
+      - post_net
+  offers:
+    build:
+      context: ./offer_management
+      dockerfile: Dockerfile    
+    ports:
+      - "3003:3003"
+    environment:
+      DB_USER: offer_management_user
+      DB_PASSWORD: offer_management_pass
+      DB_HOST: offers_db
+      DB_PORT: 5432
+      DB_NAME: offer_management_db
+      CONFIG_PORT: 3000
+      USERS_PATH: "http://users:3000"
+    depends_on:
+      offers_db:
+    networks:
+      - offer_net
+      - app_net
+  offers_db:
+    image: postgres
+    environment:
+      POSTGRES_DB: offer_management_db
+      POSTGRES_USER: offer_management_user
+      POSTGRES_PASSWORD: offer_management_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U offer_management_user -d offer_management_db"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+    networks:
+      - offer_net
+networks:
+  user_net:
+    driver: bridge
+  post_net:
+    driver: bridge
+  offer_net:
+    driver: bridge
+  route_net:
+    driver: bridge
+  app_net:
+    driver: bridge

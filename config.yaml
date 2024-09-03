@@ -1,0 +1,32 @@
+team:
+   name: X-Code
+   members:
+      - user: j.vallejosg@uniandes.edu.co
+        percentage: 25
+      - user: ca.ariasv1@uniandes.edu.co
+        percentage: 25
+      - user: af.losada@uniandes.edu.co
+        percentage: 25
+      - user: e.chaparroa@uniandes.edu.co
+        percentage: 25
+board: https://github.com/orgs/MISW-4301-Desarrollo-Apps-en-la-Nube/projects/163
+user-management:
+  folder: user_management
+  port: 3000
+  authors:
+    - e.chaparroa@uniandes.edu.co
+post-management:
+  folder: post_management
+  port: 3001
+  authors:
+    - ca.ariasv1@uniandes.edu.co
+offer-management:
+  folder: offer_management
+  port: 3003
+  authors:
+    - j.vallejosg@uniandes.edu.co
+route-management:
+  folder: route_management
+  port: 3002
+  authors:
+    - af.losada@uniandes.edu.co

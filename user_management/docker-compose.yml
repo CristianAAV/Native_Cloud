@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    container_name: cnt_users
+    depends_on:
+      - database
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    networks:
+      - user_red
+  database:
+    image: postgres:latest
+    container_name: cnt_db_users
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpassword
+      POSTGRES_DB: user_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - user_red
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]  # Verifica si PostgreSQL está listo
+      interval: 10s  # Intervalo entre chequeos
+      timeout: 5s  # Tiempo de espera para cada chequeo
+      retries: 5  # Número de intentos antes de marcar como no saludable
+
+networks:
+  user_red:
+
+volumes:
+  db_data:
